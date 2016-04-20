@@ -14,6 +14,7 @@ namespace TwitchChatBot001
 {
     public partial class Form1 : Form
     {
+
         Queue<string> sendMessageQueue;
         TcpClient tcpClient;
         StreamReader reader;
