@@ -26,6 +26,7 @@ namespace TwitchChatBot001
         string chatCommandId;
         DateTime lastMessageTime;
         bool isBack;
+        string lastChatString;
 
         public Form1()
         {
@@ -36,6 +37,7 @@ namespace TwitchChatBot001
             chatCommandId = "PRIVMSG";
             chatMessagePrefix = $":{userName}!{userName}@{userName}.tmi.twitch.tv {chatCommandId} #{channelName} :";
             isBack = false;
+            lastChatString = String.Empty;
 
             InitializeComponent();
             Reconnect();
@@ -87,7 +89,9 @@ namespace TwitchChatBot001
             {
                 if (sendMessageQueue.Count > 0)
                 {
-                    string outMessage = sendMessageQueue.Dequeue();
+                    //string outMessage = sendMessageQueue.Dequeue();
+                    string outMessage = sendMessageQueue.Peek();
+                    sendMessageQueue.Dequeue();
 
                     writer.WriteLine($"{chatMessagePrefix}{outMessage}");
                     
@@ -146,14 +150,40 @@ namespace TwitchChatBot001
             
             rtbRoom.AppendText($"\r\n<{timeStamp}> {speaker} : {inMessage}");
 
+            // test command - check if repeat
             if (inMessage.Equals("!hi"))
             {
-                SendMessage($"Hello, {speaker}");
+                string intendedOutput = $"Hello, {speaker}";
+                if (!intendedOutput.Equals(lastChatString))
+                {
+                    SendMessage(intendedOutput);
+                }
+                else
+                {
+                    SendMessage($"{speaker}, please refrain from repeating your requests so soon. We don't want twitch to ban you!");
+                }
+                
             }
+
+            // Generic !help listing
+            if (inMessage.Equals("!help"))
+            {
+                string intendedOutput = $"{speaker}, here is a list of commands that I know: !hi !help";
+                if (!intendedOutput.Equals(lastChatString))
+                {
+                    SendMessage(intendedOutput);
+                }
+                else
+                {
+                    SendMessage($"{speaker}, please refrain from repeating your requests so soon. We don't want twitch to ban you!");
+                }
+            }
+
         }
 
         void SendMessage(string outMessage)
         {
+            lastChatString = outMessage;
             sendMessageQueue.Enqueue(outMessage);
         }
     }
