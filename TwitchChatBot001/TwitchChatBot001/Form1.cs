@@ -25,16 +25,17 @@ namespace TwitchChatBot001
         string chatMessagePrefix;
         string chatCommandId;
         DateTime lastMessageTime;
+        bool isBack;
 
         public Form1()
         {
             sendMessageQueue = new Queue<string>();
-            this.userName = "brimerbot";
-            this.passWord = File.ReadAllText("password.txt");
-            this.channelName = "devin_brimer";
+            userName = "brimerbot";
+            passWord = File.ReadAllText("password.txt");
+            channelName = "devin_brimer";
             chatCommandId = "PRIVMSG";
             chatMessagePrefix = $":{userName}!{userName}@{userName}.tmi.twitch.tv {chatCommandId} #{channelName} :";
-            
+            isBack = false;
 
             InitializeComponent();
             Reconnect();
@@ -42,6 +43,7 @@ namespace TwitchChatBot001
 
         void Reconnect()
         {
+            isBack = false;
             tcpClient = new TcpClient("irc.twitch.tv", 6667);
             reader = new StreamReader(tcpClient.GetStream());
             writer = new StreamWriter(tcpClient.GetStream());
@@ -52,7 +54,6 @@ namespace TwitchChatBot001
                 + "USER " + userName + " 8 * :" + userName);
             writer.WriteLine("CAP REQ :twitch.tv/membership");
             writer.WriteLine("JOIN #" + channelName);
-            //writer.Flush();
             lastMessageTime = DateTime.Now;
         }
 
@@ -69,6 +70,19 @@ namespace TwitchChatBot001
 
         void TrySendingMessages()
         {
+            string timeStamp = DateTime.Now.ToString("HH:mm");
+
+            // send a message to chat stating the bots entry/return
+            if (!isBack)
+            {
+                string returnMsg = $"Annnnnnd, I'm back...";
+                writer.WriteLine($"{chatMessagePrefix}{returnMsg}");
+                rtbRoom.AppendText($"\r\n<{timeStamp}> {userName} : {returnMsg}");
+                rtbRoom.ScrollToCaret();
+                isBack = true;
+            }            
+
+            // check the messages queue. if any, send them
             if (DateTime.Now - lastMessageTime > TimeSpan.FromSeconds(5))
             {
                 if (sendMessageQueue.Count > 0)
@@ -76,8 +90,6 @@ namespace TwitchChatBot001
                     string outMessage = sendMessageQueue.Dequeue();
 
                     writer.WriteLine($"{chatMessagePrefix}{outMessage}");
-
-                    string timeStamp = DateTime.Now.ToString("HH:mm");
                     
                     rtbRoom.AppendText($"\r\n<{timeStamp}> {userName} : {outMessage}");
                     rtbRoom.ScrollToCaret();
